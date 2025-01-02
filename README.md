@@ -37,15 +37,16 @@
 /d:/Code/SQL/
 │
 ├── src/
-│   └── main.py  # 主应用脚本
-│
-├── templates/
-│   ├── login.html  # 登录页面
-│   ├── home.html  # 主页面
-│   ├── search.html  # 查找图书页面
-│   ├── add.html  # 增加图书页面
-│   ├── delete.html  # 删除图书页面
-│   └── edit.html  # 更改图书信息页面
+│   |── main.py  # 主应用脚本
+|   |── operations.py # 逻辑函数
+|   |── orm.py  # 映射函数
+│   └── templates/
+│       ├── login.html  # 登录页面
+│       ├── home.html  # 主页面
+│       ├── search/  # 查找图书
+│       ├── add/  # 增加图书
+│       ├── delete/  # 删除图书
+│       └── edit/  # 更改图书信息
 │
 └── requirements.txt  # 依赖文件
 ```

@@ -3,11 +3,11 @@ import datetime
 import typing
 
 db_params: dict[str, str] = {
-    "database": "bkmgr",
-    "user": "postgres",
-    "password": "postgres",
-    "host": "psql.liautraver.dev",
-    "port": "31001"
+    "database": "todo",
+    "user": "todo",
+    "password": "todo",
+    "host": "todo",
+    "port": "todo"
 }
 
 

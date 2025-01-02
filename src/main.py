@@ -29,9 +29,9 @@ def search():
     if flask.request.method == 'POST':
         keyword = flask.request.form.get('keyword', '')
         books = db.search_books(keyword)
-        return flask.render_template("search.html", books=books, search=True)
+        return flask.render_template("search/search.html", books=books, search=True)
     books=db.search_books('')
-    return flask.render_template("search.html",books=books, search=False)
+    return flask.render_template("search/search.html",books=books, search=False)
 
 
 @app.route('/home/add', methods=['GET', 'POST'])
@@ -54,12 +54,12 @@ def add_book():
         else:
             flask.flash("图书添加失败，请重试。", "error")
 
-    return flask.render_template("add.html")
+    return flask.render_template("add/add.html")
 
 
 @app.route('/home/add/success')
 def add_success():
-    return flask.render_template("add_success.html")
+    return flask.render_template("add/add_success.html")
 
 
 @app.route('/home/delete', methods=['GET', 'POST'])
@@ -71,13 +71,13 @@ def delete_book():
 
         if book:
             # 找到图书，显示图书信息并要求确认删除
-            return flask.render_template('delete_confirm.html', book=book)
+            return flask.render_template('delete/delete_confirm.html', book=book)
         else:
             flask.flash("没有找到该图书，删除失败。", "error")
             # 没找到图书，返回当前删除页面
             return flask.redirect(flask.url_for('delete_book'))
 
-    return flask.render_template('delete.html')  # GET 请求时显示删除页面
+    return flask.render_template('delete/delete.html')  # GET 请求时显示删除页面
 
 
 @app.route('/home/delete/confirm', methods=['POST'])
@@ -102,12 +102,12 @@ def edit_book():
 
         if book:
             # 找到图书，展示图书信息并允许编辑
-            return flask.render_template('edit.html', book=book)
+            return flask.render_template('edit/edit.html', book=book)
         else:
             flask.flash("没有找到该图书，编辑失败。", "error")
             return flask.redirect(flask.url_for('edit_book'))  
 
-    return flask.render_template('edit_search.html')  # GET 请求时显示输入 ISBN 的页面
+    return flask.render_template('edit/edit_search.html')  # GET 请求时显示输入 ISBN 的页面
 
 
 @app.route('/home/edit/confirm', methods=['POST'])
@@ -125,10 +125,10 @@ def confirm_edit():
     success = db.update_book(new_book)
 
     if success:
-        return flask.render_template('edit_success.html')  # 编辑成功后跳转到成功页面
+        return flask.render_template('edit/edit_success.html')  # 编辑成功后跳转到成功页面
     else:
         flask.flash("图书信息更新失败，请重试。", "error")
-        return flask.redirect(flask.url_for('edit_book'))  # 失败则返回编辑页面
+        return flask.redirect(flask.url_for('edit/edit_book'))  # 失败则返回编辑页面
 
 
 
