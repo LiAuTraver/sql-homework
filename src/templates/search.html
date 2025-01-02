@@ -19,40 +19,43 @@
             <button type="submit" class="btn btn-primary">查找</button>
         </form>
 
-
         {% if search %}
-            {% if books %}
-            <h2 class="my-4">搜索结果：</h2>
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>ISBN</th>
-                        <th>书名</th>
-                        <th>总库存</th>
-                        <th>可用库存</th>
-                        <th>描述</th>
-                        <th>出版日期</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for book in books %}
-                        <tr>
-                            <td>{{ book.isbn }}</td>
-                            <td>{{ book.name }}</td>
-                            <td>{{ book.copies }}</td>
-                            <td>{{ book.available_copies }}</td>
-                            <td>{{ book.description }}</td>
-                            <td>{{ book.publish_date }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-                </ul>
-            {% else %}
-                <p class="my-4">没有找到相关图书。</p>
-            {% endif %}
+        <h2 class="my-4">搜索结果：</h2>
+        {% else %}
+        <h2 class="my-4">所有图书：</h2>
         {% endif %}
 
+        {% if books %}
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ISBN</th>
+                    <th>书名</th>
+                    <th>总库存</th>
+                    <th>可用库存</th>
+                    <th>描述</th>
+                    <th>出版日期</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>{{ book.isbn }}</td>
+                    <td>{{ book.name }}</td>
+                    <td>{{ book.copies }}</td>
+                    <td>{{ book.available_copies }}</td>
+                    <td>{{ book.description }}</td>
+                    <td>{{ book.publish_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </ul>
+        {% else %}
+        <p class="my-4">没有找到相关图书。</p>
+        {% endif %}
+        <br>
+        <a href="/home" class="btn btn-secondary">返回首页</a>
     </div>
 </body>
 
