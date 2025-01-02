@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑图书</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">编辑图书</h1>
+
+        <form action="/home/edit/confirm" method="POST">
+            <input type="hidden" name="isbn" value="{{ book.isbn }}">
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>字段</th>
+                        <th>输入</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><label for="name" class="form-label">书名</label></td>
+                        <td><input type="text" class="form-control" id="name" name="name" value="{{ book.name }}" required></td>
+                    </tr>
+                    <!-- <tr>
+                        <td><label for="copies" class="form-label">数量</label></td>
+                        <td><input type="number" class="form-control" id="copies" name="copies" value="{{ book.copies }}" required></td>
+                    </tr> -->
+                    <tr>
+                        <td><label for="description" class="form-label">简介</label></td>
+                        <td><textarea class="form-control" id="description" name="description" rows="3" required>{{ book.description }}</textarea></td>
+                    </tr>
+                    <tr>
+                        <td><label for="publish_date" class="form-label">发布日期</label></td>
+                        <td><input type="date" class="form-control" id="publish_date" name="publish_date" value="{{ book.publish_date }}" required></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="submit" class="btn btn-primary">确认修改</button>
+            <a href="/home" class="btn btn-secondary">返回首页</a>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alert alert-warning mt-4">
+            {% for category, message in messages %}
+            <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        
+        <br>
+        <a href="/home" class="btn btn-secondary">返回首页</a>
+    </div>
+</body>
+</html>

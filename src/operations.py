@@ -1,132 +1,171 @@
-import asyncio
-import datetime
-import typing
-import asyncpg
-
-import orm
-
-
-async def fetch_students(conn: asyncpg.connection) -> typing.List[orm.Student]:
-    records = await conn.fetch("SELECT * FROM students")
-    students = [orm.Student(**record) for record in records]
-    return students
-
-async def fetch_books(conn: asyncpg.connection) -> typing.List[orm.Book]:
-    records = await conn.fetch("SELECT * FROM books")
-    books = [orm.Book(**record) for record in records]
-    return books
-# Utility function to execute SQL queries
-async def execute_query(conn, query, *args):
-    try:
-        await conn.execute(query, *args)
-        print(f"Query executed successfully: {query}")
-    except Exception as e:
-        print(f"Error executing query: {query}\nError: {e}")
-
-# Insert functions
-async def insert_students(conn):
-    query = """
-    INSERT INTO students (id, name, gender, violation_count)
-    VALUES ($1, $2, $3, $4)
-    """
-    students = [
-        ("S001", "Alice", "Female", 0),
-        ("S002", "Bob", "Male", 2),
-        ("S003", "Charlie", "Other", 1),
-    ]
-    for student in students:
-        await execute_query(conn, query, *student)
-
-async def insert_books(conn):
-    query = """
-    INSERT INTO books (isbn, name, copies, available_copies, description, publish_date)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    """
-    books = [
-        ("B001", "The Great Gatsby", 10, 8, "A classic novel.", datetime.date(1925, 4, 10)),
-        ("B002", "1984", 15, 15, "Dystopian fiction.", datetime.date(1949, 6, 8)),
-        ("B003", "To Kill a Mockingbird", 12, 12, "A novel about racial injustice.", datetime.date(1960, 7, 11)),
-    ]
-    for book in books:
-        await execute_query(conn, query, *book)
-
-async def insert_rooms(conn):
-    query = """
-    INSERT INTO rooms (id, name, location)
-    VALUES ($1, $2, $3)
-    """
-    rooms = [
-        (1, "Study Room A", "First Floor"),
-        (2, "Study Room B", "Second Floor"),
-        (3, "Study Room C", "Third Floor"),
-    ]
-    for room in rooms:
-        await execute_query(conn, query, *room)
-
-async def insert_seats(conn):
-    query = """
-    INSERT INTO seats (room_id, seat_id)
-    VALUES ($1, $2)
-    """
-    seats = [
-        (1, 1),
-        (1, 2),
-        (2, 1),
-        (2, 2),
-        (3, 1),
-    ]
-    for seat in seats:
-        await execute_query(conn, query, *seat)
-
-async def insert_borrow_records(conn):
-    query = """
-    INSERT INTO borrow_records (sid, isbn, borrow_date, return_date, due_date, is_overdue)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    """
-    borrow_records = [
-        ("S001", "B001", datetime.date(2024, 1, 1), None, datetime.date(2024, 1, 15), False),
-        ("S002", "B002", datetime.date(2024, 1, 2), datetime.date(2024, 1, 16), datetime.date(2024, 1, 16), False),
-        ("S003", "B003", datetime.date(2024, 1, 3), None, datetime.date(2024, 1, 17), True),
-    ]
-    for record in borrow_records:
-        await execute_query(conn, query, *record)
+import psycopg2
+import psycopg2.pool
+import logging
+from typing import Optional, List
+from orm import Book
+from datetime import datetime
 
 
-async def get_connection(username, password) -> asyncpg.connect:
-    try:
-        params = {**orm.db_params}
-        params['user'] = username
-        params['password'] = password
-        conn = await asyncpg.connect(**orm.db_params)
-        version = await conn.fetchval("SELECT version();")
-        print("Connected to the database, version: ", version)
-        return conn
-    except Exception as e:
-        print("Error connecting to the database")
-        print(e)
-        return None
+class DatabaseManager:
+    def __init__(self):
+        self.pool = None
+        self.db_params = {
+            'dbname': 'bkmgr',
+            'user': 'postgres',
+            'password': 'postgres',
+            'host': 'psql.liautraver.dev',
+            'port': '31001'
+        }
 
+    def connect(self):
+        if self.pool:
+            return
 
-if __name__ == '__main__':
-    async def main():
-        """
-        insert some sample data into the database
-        :return: None
-        """
-        params = {**orm.db_params}
-        params['user'] = "postgres"
-        params['password'] = "postgres"
-        conn = await asyncpg.connect(**params)
         try:
-            print("Inserting sample data...")
-            await insert_students(conn)
-            await insert_books(conn)
-            await insert_rooms(conn)
-            await insert_seats(conn)
-            await insert_borrow_records(conn)
-            print("Sample data inserted successfully.")
-        finally:
-            await conn.close()
+            self.pool = psycopg2.pool.SimpleConnectionPool(
+                1, 20, **self.db_params)
+            # print("Database connected")
+            logging.info("Database connection pool created successfully")
+        except Exception as e:
+            logging.error(f"Failed to create connection pool: {e}")
+            raise
 
-    asyncio.run(main())
-    pass
+    def close(self):
+        if self.pool:
+            self.pool.closeall()
+            # print("DataBase closed successfully")
+
+    def add_book(self, book: Book) -> bool:
+        conn = self.pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    '''CALL add_new_book(
+                        %s::VARCHAR,           -- book_isbn
+                        %s::VARCHAR,           -- book_name
+                        %s::INTEGER,           -- add_copies
+                        %s::TEXT,             -- description
+                        %s::DATE              -- publish_date
+                    )
+                ''', (book.isbn, book.name, book.copies, book.description, book.publish_date)
+                )
+            conn.commit()
+            return True
+        except Exception as e:
+            logging.error(f"Error adding book: {e}")
+            conn.rollback()
+            return False
+        finally:
+            self.pool.putconn(conn)
+
+    def delete_book(self, isbn: str) -> bool:
+        conn = self.pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute('DELETE FROM books WHERE isbn = %s', (isbn,))
+            conn.commit()
+            return True
+        except Exception as e:
+            logging.error(f"Error deleting book: {e}")
+            conn.rollback()
+            return False
+        finally:
+            self.pool.putconn(conn)
+
+    def get_book_by_isbn(self, isbn: str):
+        conn = self.pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute('SELECT * FROM books WHERE isbn = %s', (isbn,))
+                result = cur.fetchone()
+                if result:
+                    return Book(isbn=result[0], name=result[1], copies=result[2],
+                                available_copies=result[3], description=result[4], publish_date=result[5])
+                return None
+        except Exception as e:
+            logging.error(f"Error fetching book: {e}")
+            return None
+        finally:
+            self.pool.putconn(conn)
+
+    def update_book(self, new_book) -> bool:
+        conn = self.pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    UPDATE books 
+                    SET name = %s,  description = %s, publish_date = %s
+                    WHERE isbn = %s
+                ''', (new_book.name, new_book.description, new_book.publish_date, new_book.isbn))
+            conn.commit()
+            return True
+        except Exception as e:
+            logging.error(f"Error updating book: {e}")
+            # print("Error updating book: ", e)
+            conn.rollback()
+            return False
+        finally:
+            self.pool.putconn(conn)
+
+    def search_books(self, keyword: str) -> List[Book]:
+        # print("keyword:", keyword)
+        conn = self.pool.getconn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute('''
+                    SELECT * FROM books 
+                    WHERE name ILIKE %s OR description ILIKE %s
+                ''', (f'%{keyword}%', f'%{keyword}%'))
+                bks = [Book(
+                    isbn=r[0],
+                    name=r[1],
+                    copies=r[2],
+                    available_copies=r[3],
+                    description=r[4],
+                    publish_date=r[5]
+                ) for r in cur.fetchall()]
+                # for bk in bks:
+                #     print(bk)
+                return bks
+        except Exception as e:
+            logging.error(f"Error searching books: {e}")
+            return []
+        finally:
+            self.pool.putconn(conn)
+
+
+# def test():
+#     print("1")
+#     db = DatabaseManager()
+#     db.connect()
+
+#     # bks = db.search_books('')
+#     # for bk in bks:
+#     #     print(bk)
+
+#     # isbn = '978-3-16-148410-0'
+
+#     # bk = db.get_book_by_isbn(isbn)
+
+#     # edited_bk = Book(
+#     #     isbn='978-3-16-148410-0',
+#     #     name='The Testbook',
+#     #     copies=10,
+#     #     available_copies=10,
+#     #     description='A novel tested by zxs',
+#     #     publish_date=datetime(2025, 1, 2)
+#     # )
+
+#     # db.update_book(isbn, edited_bk.name, edited_bk.copies,
+#     #                edited_bk.description, edited_bk.publish_date)
+
+#     print("After adding book")
+
+#     bks = db.search_books('')
+#     for bk in bks:
+#         print(bk)
+#     db.close()
+
+
+# if __name__ == '__main__':
+#     test()
