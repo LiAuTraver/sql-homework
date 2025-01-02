@@ -3,7 +3,7 @@ import datetime
 import typing
 import asyncpg
 
-from src import orm
+import orm
 
 
 async def fetch_students(conn: asyncpg.connection) -> typing.List[orm.Student]:
@@ -91,13 +91,32 @@ async def insert_borrow_records(conn):
     for record in borrow_records:
         await execute_query(conn, query, *record)
 
+
+async def get_connection(username, password) -> asyncpg.connect:
+    try:
+        params = {**orm.db_params}
+        params['user'] = username
+        params['password'] = password
+        conn = await asyncpg.connect(**orm.db_params)
+        version = await conn.fetchval("SELECT version();")
+        print("Connected to the database, version: ", version)
+        return conn
+    except Exception as e:
+        print("Error connecting to the database")
+        print(e)
+        return None
+
+
 if __name__ == '__main__':
     async def main():
         """
         insert some sample data into the database
         :return: None
         """
-        conn = await asyncpg.connect(**orm.db_params)
+        params = {**orm.db_params}
+        params['user'] = "postgres"
+        params['password'] = "postgres"
+        conn = await asyncpg.connect(**params)
         try:
             print("Inserting sample data...")
             await insert_students(conn)

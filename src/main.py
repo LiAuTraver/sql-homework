@@ -1,20 +1,31 @@
 import asyncio
+import os
 import sys
 import asyncpg
 import flask
 import flask_material
 
-import src.operations
-from src import orm
+import operations
+import orm
 
 app = flask.Flask(__name__)
 flask_material.Material(app)
-
+app.secret_key = os.urandom(24)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if flask.request.method == 'POST':
-        return flask.redirect(flask.url_for('home'))
+        username = flask.request.form['username']
+        password = flask.request.form['password']
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        is_valid = loop.run_until_complete(operations.get_connection(username, password))
+        if(is_valid):
+          print("Login successful")
+          flask.redirect(flask.url_for('dashboard'))
+        else:
+          print("Login failed")
+          flask.flash('Invalid username or password','danger')  
     return flask.render_template("login.html")
 
 
@@ -47,41 +58,32 @@ def delete_book():
 @app.route('/home/modify', methods=['GET', 'POST'])
 def modify_book():
     if flask.request.method == 'POST':
-        pass
+      pass
     return flask.render_template("modify.html")
 
+@app.route("/dashboard")
+def dashboard():
+    return "Welcome to the Dashboard!"
 
 @app.route('/')
 def hello_world():
     return flask.render_template("hello.html", name="Zxs")
 
 
-async def get_connection() -> asyncpg.connect:
-    try:
-        conn = await asyncpg.connect(**orm.db_params)
-        version = await conn.fetchval("SELECT version();")
-        print("Connected to the database, version: ", version)
-        return conn
-    except Exception as e:
-        print("Error connecting to the database")
-        print(e)
-        return None
-
 
 async def main():
-    conn = await get_connection()
+    conn = await operations.get_connection("postgres", "postgres")
     if conn is None:
         print("Error connecting to the database. the program will now exit.")
         sys.exit(1)
     print("successfully connected to the database")
-    print("successfully closed the connection")
 
-    students = await src.operations.fetch_students(conn)
+    students = await operations.fetch_students(conn)
     for student in students:
         print(student)
     _ = await conn.close()
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    # asyncio.run(main())
     app.run()
