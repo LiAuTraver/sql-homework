@@ -6,10 +6,10 @@
 
 1. `/login` 用户登录
 2. `/home` 主页面
-3. `/home/find` 查找图书
+3. `/home/search` 查找图书
 4. `/home/add` 增加图书
 5. `/home/delete` 删除图书
-6. `/home/modify` 更改图书信息
+6. `/home/edit` 更改图书信息
 
 ## 运行步骤
 
@@ -42,10 +42,10 @@
 ├── templates/
 │   ├── login.html  # 登录页面
 │   ├── home.html  # 主页面
-│   ├── find.html  # 查找图书页面
+│   ├── search.html  # 查找图书页面
 │   ├── add.html  # 增加图书页面
 │   ├── delete.html  # 删除图书页面
-│   └── modify.html  # 更改图书信息页面
+│   └── edit.html  # 更改图书信息页面
 │
 └── requirements.txt  # 依赖文件
 ```
