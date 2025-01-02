@@ -1,10 +1,9 @@
+import typing
 import psycopg2
 import logging
-from typing import List
-
 import psycopg2.pool
 import psycopg2.sql
-from orm import Book
+import orm
 
 
 class DatabaseManager:
@@ -12,10 +11,10 @@ class DatabaseManager:
         self.pool = None
         self.db_params = {
             "dbname": "bkmgr",
-            "user": "postgres",
-            "password": "postgres",
-            "host": "psql.liautraver.dev",
-            "port": "31001",
+            "user": "",
+            "password": "",
+            "host": Exception("set the url, you idiot!"),
+            "port": "Exception('set the port, you idiot!')",
         }
 
     def connect(self):
@@ -35,8 +34,8 @@ class DatabaseManager:
             self.pool.closeall()
             print("DataBase closed successfully")
 
-    def add_book(self, book: Book) -> bool:
-        conn = self.pool.getconn()
+    def add_book(self, book: orm.Book) -> bool:
+        conn = self.pool.getconn() # type: ignore
         try:
             with conn.cursor() as cur:
                 cur.execute(
@@ -63,10 +62,10 @@ class DatabaseManager:
             conn.rollback()
             return False
         finally:
-            self.pool.putconn(conn)
+            self.pool.putconn(conn) # type: ignore
 
     def delete_book(self, isbn: str) -> bool:
-        conn = self.pool.getconn()
+        conn = self.pool.getconn() # type: ignore
         try:
             with conn.cursor() as cur:
                 cur.execute("DELETE FROM books WHERE isbn = %s", (isbn,))
@@ -77,16 +76,16 @@ class DatabaseManager:
             conn.rollback()
             return False
         finally:
-            self.pool.putconn(conn)
+            self.pool.putconn(conn) # type: ignore
 
     def get_book_by_isbn(self, isbn: str):
-        conn = self.pool.getconn()
+        conn = self.pool.getconn() # type: ignore
         try:
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM books WHERE isbn = %s", (isbn,))
                 result = cur.fetchone()
                 if result:
-                    return Book(
+                    return orm.Book(
                         isbn=result[0],
                         name=result[1],
                         copies=result[2],
@@ -99,10 +98,10 @@ class DatabaseManager:
             logging.error(f"Error fetching book: {e}")
             return None
         finally:
-            self.pool.putconn(conn)
+            self.pool.putconn(conn) # type: ignore
 
     def update_book(self, new_book) -> bool:
-        conn = self.pool.getconn()
+        conn = self.pool.getconn() # type: ignore
         try:
             with conn.cursor() as cur:
                 cur.execute(
@@ -122,15 +121,14 @@ class DatabaseManager:
             return True
         except Exception as e:
             logging.error(f"Error updating book: {e}")
-            # print("Error updating book: ", e)
             conn.rollback()
             return False
         finally:
-            self.pool.putconn(conn)
+            self.pool.putconn(conn) # type: ignore
 
-    def search_books(self, keyword: str) -> List[Book]:
-        # print("keyword:", keyword)
-        conn = self.pool.getconn()
+    def search_books(self, keyword: str) -> typing.List[orm.Book]:
+        logging.info(f"Searching for books with keyword: {keyword}")
+        conn = self.pool.getconn() # type: ignore
         try:
             with conn.cursor() as cur:
                 cur.execute(
@@ -141,7 +139,7 @@ class DatabaseManager:
                     (f"%{keyword}%", f"%{keyword}%"),
                 )
                 bks = [
-                    Book(
+                    orm.Book(
                         isbn=r[0],
                         name=r[1],
                         copies=r[2],
@@ -158,41 +156,10 @@ class DatabaseManager:
             logging.error(f"Error searching books: {e}")
             return []
         finally:
-            self.pool.putconn(conn)
+            self.pool.putconn(conn) # type: ignore
 
+if __name__ == '__main__':
+    raise Exception("don't execute me, you idiot!")
+else:
+    print("Well done!")
 
-# def test():
-#     print("1")
-#     db = DatabaseManager()
-#     db.connect()
-
-#     # bks = db.search_books('')
-#     # for bk in bks:
-#     #     print(bk)
-
-#     # isbn = '978-3-16-148410-0'
-
-#     # bk = db.get_book_by_isbn(isbn)
-
-#     # edited_bk = Book(
-#     #     isbn='978-3-16-148410-0',
-#     #     name='The Testbook',
-#     #     copies=10,
-#     #     available_copies=10,
-#     #     description='A novel tested by zxs',
-#     #     publish_date=datetime(2025, 1, 2)
-#     # )
-
-#     # db.update_book(isbn, edited_bk.name, edited_bk.copies,
-#     #                edited_bk.description, edited_bk.publish_date)
-
-#     print("After adding book")
-
-#     bks = db.search_books('')
-#     for bk in bks:
-#         print(bk)
-#     db.close()
-
-
-# if __name__ == '__main__':
-#     test()
