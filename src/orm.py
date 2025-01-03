@@ -1,13 +1,14 @@
 import dataclasses
 import datetime
+import os
 import typing
 
 db_params: dict[str, str] = {
-    "database": "todo",
-    "user": "todo",
-    "password": "todo",
-    "host": "todo",
-    "port": "todo"
+    "database": "bkmgr",
+    "user": "",
+    "password": "",
+    "host": os.getenv('DB_HOST' , 'localhost'),
+    "port": "31001"
 }
 
 
