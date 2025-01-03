@@ -3,7 +3,7 @@ import controller
 
 
 def main():
-    controller.app.run(debug=True)
+    controller.app.run()
     return 0
 
 
