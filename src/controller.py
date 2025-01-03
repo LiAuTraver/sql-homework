@@ -38,7 +38,7 @@ def index():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-  if flask.request.method == "POST":
+  if flask.request.method == 'POST':
     database_manager.db_params["user"] = flask.request.form["username"]
     database_manager.db_params["password"] = flask.request.form["password"]
     try:
@@ -46,8 +46,10 @@ def login():
       flask.session['user'] = flask.request.form["username"]
       return flask.redirect(flask.url_for("home"))
     except Exception as e:
-      flask.flash(f"Login failed. Please check your username and password. Error: {str(e)}", "error")
-
+      flask.session.pop("user", None)
+      # flask.flash(f"Login failed. Please check your username and password. Error: {str(e)}", "error")
+  else:
+    flask.session.pop("user", None)
   return flask.render_template("login.html")
 
 
