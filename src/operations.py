@@ -13,8 +13,8 @@ class DatabaseManager:
             "dbname": "bkmgr",
             "user": "",
             "password": "",
-            "host": Exception("set the url, you idiot!"),
-            "port": "Exception('set the port, you idiot!')",
+            "host": "psql.liautraver.dev",
+            "port": "31001",
         }
 
     def connect(self):
